@@ -240,7 +240,6 @@ export class Coin98WalletAdapter extends BaseWalletAdapter {
   }
 
   async signMessage(msgPayload: SignMessagePayload): Promise<SignMessageResponse> {
-    console.log('🐳 -> signMessage -> msgPayload', msgPayload);
     try {
       const wallet = this._wallet;
       const provider = this._provider || window.coin98?.aptos;
@@ -283,6 +282,8 @@ export class Coin98WalletAdapter extends BaseWalletAdapter {
         }
         this.emit('accountChange', newAccount.publicKey);
       };
+
+      // Todo: Account change implement later
     } catch (error: any) {
       const errMsg = error.message;
       this.emit('error', new WalletAccountChangeError(errMsg));
