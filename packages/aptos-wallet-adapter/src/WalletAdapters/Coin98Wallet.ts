@@ -29,8 +29,12 @@ interface IApotsErrorResult {
 
 type AddressInfo = { address: string; publicKey: string };
 
+interface IConnectOptions {
+  network: string;
+}
+
 interface ICoin98Wallet {
-  connect: () => Promise<AddressInfo>;
+  connect: (options?: IConnectOptions) => Promise<AddressInfo>;
   account: () => Promise<AddressInfo>;
   isConnected: () => Promise<boolean>;
   signAndSubmitTransaction(
@@ -40,6 +44,7 @@ interface ICoin98Wallet {
   signTransaction(transaction: any, options?: any): Promise<Uint8Array | IApotsErrorResult>;
   signMessage(message: SignMessagePayload): Promise<SignMessageResponse>;
   disconnect(): Promise<void>;
+  on: (eventName: string, callback: Function) => void;
 }
 
 interface AptosWindow extends Window {
@@ -63,7 +68,7 @@ export class Coin98WalletAdapter extends BaseWalletAdapter {
 
   url = 'https://chrome.google.com/webstore/detail/coin98-wallet/aeachknmefphepccionboohckonoeemg';
 
-  icon = 'https://coin98.s3.ap-southeast-1.amazonaws.com/Coin/c98.png';
+  icon = 'https://download.coin98.com/media/logos/logoC98.png';
 
   protected _provider: ICoin98Wallet | undefined;
 
@@ -92,7 +97,7 @@ export class Coin98WalletAdapter extends BaseWalletAdapter {
     super();
 
     this._provider = typeof window !== 'undefined' ? window.coin98?.aptos : undefined;
-    this._network = undefined;
+    this._network = network;
     this._timeout = timeout;
     this._connecting = false;
     this._wallet = null;
@@ -150,8 +155,7 @@ export class Coin98WalletAdapter extends BaseWalletAdapter {
       this._connecting = true;
 
       const provider = this._provider || window.coin98?.aptos;
-      let response = await provider?.connect();
-      console.log('🐳 -> connect -> response', response);
+      let response = await provider?.connect({ network: this._network });
 
       if (typeof response === 'boolean') {
         response = await provider?.account();
@@ -283,7 +287,7 @@ export class Coin98WalletAdapter extends BaseWalletAdapter {
         this.emit('accountChange', newAccount.publicKey);
       };
 
-      // Todo: Account change implement later
+      provider.on('accountChange', handleAccountChange);
     } catch (error: any) {
       const errMsg = error.message;
       this.emit('error', new WalletAccountChangeError(errMsg));
